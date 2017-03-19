@@ -1,0 +1,151 @@
+﻿**** PLATFORM INVOKE ****
+
+Platform Invoke is a service which enables managed code to call unmanaged functions implemented in DLLs (Dynamic Link Libraries).
+
+Platform Invoke locates and invokes an exported function and then marshals (converts) its arguments across the
+Interoperation Boundary.
+
+To consume exported DLL functions, the following must be done:
+
+1. ** Identify functions in DLLs **
+Minimally, you must specify the name of the function and name of the DLL that contains it.
+
+2. ** Create a class to hold DLL functions **
+It is seen as good practice to create a C# class which holds the platform invoke prototypes.
+
+3. ** Create prototypes in managed code **
+In C#, you use DllImportAttribute to identify the DLL and function. This prototype should be marked "static" and "extern".
+
+4. ** Call the DLL function/functions **
+Call this platform invoke prototype like any other managed method.
+
+** Deeper look at the platform invoke process **
+
+When platform invoke calls an unmanaged function, it performs the following sequence of actions:
+
+1. Locates the DLL containing the function (occurs only on the first call to a function related to this DLL)
+2. Loads the DLL into memory (occurs only on the first call to a function related to this DLL)
+3. Locates the address of the function in memory (occurs only on the first call to this function)
+4. Arguments are pushed onto the stack and marshalled as required
+5. Control is transferred to the unmanaged function
+
+Parameters used to call the unmanaged functions can flow in both directions (to and from unmanaged to managed code).
+
+** NOTE **
+The interop marshaler always attempts to free memory allocated by unmanaged code! Thus confusion can arise if you anticipate
+Native C++ behaviour (no memory freeing) when using platform invoke, which automatically frees memory for pointers.
+
+The runtime will always use the function "CoTaskMemFree" method to free memory in unmanaged code. If the memory was not allocated with
+CoTaskMemAlloc, you must use an IntPtr and free the memory manually using the appropriate method (IntPtr is a way to circumvent the
+Automatic memory release which platform invoke will attempt to do).
+
+
+
+
+
+
+
+
+
+
+**** In/Out Attributes ****
+Also called directional attributes. You can apply these to method parameters when you want to alter the default behaviour
+Of the marshaler. If you OMIT directional attributes from method parameters, the marshaler determines the directional flow
+Based on the type of the parameter (value or reference) and its modifiers, if any.
+
+[In] indicates that the data should be marshaled from the caller to the unmanaged code, but NOT back to the caller.
+[Out] indicates that the data should be marshaled from the caller to the unmanaged code, AND back to the caller again.
+
+** OUT **
+In the absense of an explicit Out attribute, the marshaller assumes rules based on the parameter type.
+
+** NOTE **
+As an optimization, arrays of blittable types and classes that contain only blittable members are PINNED instead of copied during marshaling.
+This means, in example where you, for example, pass an array such as uint[], even without specifying [Out] attributes, the data will still
+Be modifiable from the callee as it operates on a pinned pointer.
+
+**** Blittable and Non-Blittable Types ****
+
+A lot of data types have a common representation in both managed and unmanaged memory and do not require special handling by the interop marshaler.
+
+These types are called "Blittable". They don't require conversion when they are passed between managed and unmanaged code. Structures that are returned
+from platform invoke MUST be blittable types. P/Invoke does not support non-blittable structures as return types.
+
+The following types from the System namespace are blittable types:
+* Byte
+* SByte
+* Int16
+* UInt16
+* Int32
+* UInt32
+* Int64
+* UInt64
+* IntPtr
+* UIntPtr
+* Single
+* Double
+
+There are also a few complex types that are blittable:
+* One-dimensional arrays of blittabletypes, such as an array of integers.
+
+Object references are NOT blittable. So this could be: An array of references to objects that are blittable by themselves. 
+
+The interop marshaller also does some optimizations in certain cases.
+
+Arrays of blittable types and classes that contain only blittable members are "PINNED" instead of copied during marshaling.
+
+The following types from the System namespace are NON-BLITTABLE types:
+* Array
+* Boolean
+* Char
+* Class
+* Object
+* Mdarray
+* String
+* ValueType
+* Szarray
+
+
+
+
+
+
+
+
+
+
+**** COPYING AND PINNING ****
+When marshaling data, the interop marshaler can copy or pin the data being marshaled.
+
+Method arguments passed by value are marshaled to unmanaged code as values on that stack. That is, there is a simple direct copying process.
+
+Method arguments passed by reference are passed as pointers on the stack. The reference type pointed to by this pointer is COPYED to the unmanaged heap,
+So that the pointer passed to the unmanaged code will point to the unmnaged heap. Sometimes. That is, if they are passed by copying. This is also referred to
+As "reference type by value".
+
+A "reference type by value with pinning" refers to the fact that the unmanaged code will get a pointer pointing to the original object from the managed heap.
+The managed object is thus "pinned" so that the garbage collector will not move it to a new memory location during garbage collection, so to make sure the
+Unmanaged code always points to the correct place. The marshaler will try to pin data whenever possible as an optimization, as to reduce the overhead of copying.
+
+What determines whether data is pinned or copied is the type of the data. For example, pinning is automatically done for objects such as String.
+
+** Formatted Blittable Classes **
+Formatted blitabble clases have fixed layout (formatted) and common data representation in both managed and unmanaged memory. When these types require
+marshaling, a pointer to the object in the heap is passed to the callee directly. The callee can change the contents of the memory being referenced
+by the pointer. NOTE, that the calle can change the memory contents if the parameter is marked Out or In/Out.
+
+
+
+
+
+
+
+
+
+
+**** STRINGBUILDER MARSHALLING ****
+When a StringBuilder is passed BY VALUE, the marshaler passes a reference to the internal buffer of the StringBuilder directly to the caller.
+The caller and callee must agree on the size of the buffer. The callee is responsible for creating a StringBuilder of the adequite length.
+The callee must take the necessary precations to ensure that the buffer is not overrun.
+So, the StringBuilder is a bit of an exception to the rule that reference types passed by value are passed as In parameters by default. It will
+Actually always be In/Out, since the callee can alter the marshaled content.

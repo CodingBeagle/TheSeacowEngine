@@ -20,6 +20,26 @@ namespace GLFWSharpie
     {
         private const string LibraryName = "glfw3.dll";
 
+        public enum KeyboardAction
+        {
+            Release = 0,
+            Press = 1,
+            Repeat = 2
+        }
+
+        public enum KeyboardKey
+        {
+            A = 65,
+            D = 68,
+            S = 83,
+            W = 87
+        }
+
+        // Delegates
+        // TODO: READ MORE UP ON MARSHALLED CALLBACKS
+        [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+        public delegate void InputCallback(IntPtr window, int key, int scancode, int action, int mods);
+
         [DllImport(LibraryName, EntryPoint = "glfwInit")]
         public static extern int Init();
 
@@ -62,5 +82,8 @@ namespace GLFWSharpie
 
         [DllImport(LibraryName, CallingConvention = CallingConvention.Cdecl, EntryPoint = "glfwMakeContextCurrent")]
         public static extern void MakeContextCurrent(IntPtr window);
+
+        [DllImport(LibraryName, CallingConvention = CallingConvention.Cdecl, EntryPoint = "glfwSetKeyCallback")]
+        public static extern void SetKeyCallback(IntPtr window, IntPtr callback);
     }
 }

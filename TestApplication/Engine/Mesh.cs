@@ -4,6 +4,7 @@ using System.Dynamic;
 using System.Linq;
 using GlmSharp;
 using GLFWSharpie;
+using TestApplication.Engine.Physics;
 
 namespace TestApplication.Engine
 {
@@ -18,10 +19,24 @@ namespace TestApplication.Engine
         public IList<float> Vertices => vertices.AsReadOnly();
 
         public quat Orientation { get; set; }
-        public vec3 Position { get; set; }
+        public vec3 PreviousPosition { get; set; }
+
+        private vec3 position;
+        public vec3 Position
+        {
+            get { return position;}
+            set
+            {
+                PreviousPosition = position;
+                position = value;
+            }
+        }
+
         public float Scale { get; set; }
         public Material Material { get; }
         public Texture Texture { get; }
+
+        public Vector3 UserColor { get; set; }
 
         public Mesh(List<float> vertices, List<uint> indices, Material material, Texture texture)
             : this(vertices, indices, material)
@@ -38,6 +53,7 @@ namespace TestApplication.Engine
             Orientation = quat.Identity;
             Position = vec3.Zero;
             Scale = 1.0f;
+            UserColor = new Vector3(1.0f, 1.0f, 1.0f);
 
             /*
              * A VAO (Vertex Array Object) stores state needed to supply vertex data from the application
@@ -153,35 +169,27 @@ namespace TestApplication.Engine
 
         public void DeActivate()
         {
+            Gl.BindBuffer(BufferTarget.Array, 0);
+            Gl.CheckForError();
+
             Gl.BindVertexArray(0);
             Gl.CheckForError();
         }
 
-        public void Draw()
+        public void Draw(mat4 perspective, mat4 view, float state)
         {
             // Enable texture if applicable
             Texture?.Activate();
 
-            // Create perspective matrix
-            mat4 perspectiveMatrix = mat4.PerspectiveFov(
-                glm.Radians(45.0f),
-                800.0f,
-                600.0f,
-                0.1f,
-                500.0f);
-
-            // Create view matrix
-            mat4 viewMatrix = mat4.LookAt(
-                new vec3(0.0f, 0.0f, -3.0f),
-                vec3.Zero,
-                vec3.UnitY);
+            //vec3 renderPosition = (Position * state) + (PreviousPosition * (1 - state));
+            vec3 renderPosition = (Position);
 
             // Model matrix
             mat4 scaleMatrix = mat4.Scale(Scale);
-            mat4 translationMatrix = mat4.Translate(Position.x, Position.y, Position.z);
+            mat4 translationMatrix = mat4.Translate(renderPosition.x, renderPosition.y, renderPosition.z);
             mat4 rotationMatrix = Orientation.ToMat4;
 
-            mat4 modelMatrix = scaleMatrix * rotationMatrix * translationMatrix;
+            mat4 modelMatrix = translationMatrix * rotationMatrix * scaleMatrix;
 
             // Transfer to shader uniforms
             int modelLocation = Gl.UniformLocation(Material.ProgramObject, "model");
@@ -191,23 +199,23 @@ namespace TestApplication.Engine
 
             int projectionLocation = Gl.UniformLocation(Material.ProgramObject, "projection");
             Gl.CheckForError();
-            Gl.UniformMatrix4(projectionLocation, 0, perspectiveMatrix.ToArray());
+            Gl.UniformMatrix4(projectionLocation, 0, perspective.ToArray());
             Gl.CheckForError();
 
             int viewLocation = Gl.UniformLocation(Material.ProgramObject, "view");
             Gl.CheckForError();
-            Gl.UniformMatrix4(viewLocation, 0, viewMatrix.ToArray());
+            Gl.UniformMatrix4(viewLocation, 0, view.ToArray());
             Gl.CheckForError();
 
             // Turn on fragment color usage
             int colorBoolLocation = Gl.UniformLocation(Material.ProgramObject, "isTexture");
-            Gl.Uniform1(colorBoolLocation, 1);
+            Gl.Uniform1(colorBoolLocation, 0);
             Gl.CheckForError();
 
-            // Pass on fragment color
-            //int userColorLocation = Gl.UniformLocation(Material.ProgramObject, "userColor");
-            //Gl.Uniform3(userColorLocation, new vec3(1.0f, 0.0f, 0.0f).ToArray());
-            //Gl.CheckForError();
+            // Set user defined color
+            int userColorLocation = Gl.UniformLocation(Material.ProgramObject, "userColor");
+            Gl.Uniform3(userColorLocation, new float[] {UserColor.X, UserColor.Y, UserColor.Z});
+            Gl.CheckForError();
 
             Gl.DrawElements(DrawMode.Triangles, (uint)Vertices.Count, DrawType.UnsignedInt, IntPtr.Zero);
             Gl.CheckForError();

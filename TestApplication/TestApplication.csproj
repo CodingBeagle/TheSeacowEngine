@@ -38,6 +38,9 @@
     <Reference Include="System" />
     <Reference Include="System.Core" />
     <Reference Include="System.Drawing" />
+    <Reference Include="System.ValueTuple, Version=4.0.1.0, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
+      <HintPath>..\GLFWSharpie\packages\System.ValueTuple.4.3.0\lib\netstandard1.0\System.ValueTuple.dll</HintPath>
+    </Reference>
     <Reference Include="System.Xml.Linq" />
     <Reference Include="System.Data.DataSetExtensions" />
     <Reference Include="Microsoft.CSharp" />
@@ -46,16 +49,22 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Engine\ContentPipeline\Obj\Face.cs" />
-    <Compile Include="Engine\ContentPipeline\Obj\FacePart.cs" />
-    <Compile Include="Engine\ContentPipeline\Obj\ModelData.cs" />
-    <Compile Include="Engine\ContentPipeline\Obj\ObjLoader.cs" />
-    <Compile Include="Engine\ContentPipeline\Obj\ObjWeaver.cs" />
-    <Compile Include="Engine\ContentPipeline\Obj\UvCoordinate.cs" />
-    <Compile Include="Engine\ContentPipeline\Obj\Vertex.cs" />
-    <Compile Include="Engine\ContentPipeline\Obj\WeavedModelData.cs" />
+    <Compile Include="Engine\Collision\Aabb.cs" />
+    <Compile Include="Engine\Collision\IntersectionDetector.cs" />
+    <Compile Include="Engine\Collision\Sphere.cs" />
+    <Compile Include="Engine\ContentPipeline\ObjFile\Face.cs" />
+    <Compile Include="Engine\ContentPipeline\ObjFile\FacePart.cs" />
+    <Compile Include="Engine\ContentPipeline\ObjFile\ModelData.cs" />
+    <Compile Include="Engine\ContentPipeline\ObjFile\ObjLoader.cs" />
+    <Compile Include="Engine\ContentPipeline\ObjFile\ObjWeaver.cs" />
+    <Compile Include="Engine\ContentPipeline\ObjFile\UvCoordinate.cs" />
+    <Compile Include="Engine\ContentPipeline\ObjFile\Vertex.cs" />
     <Compile Include="Engine\Material.cs" />
     <Compile Include="Engine\Mesh.cs" />
+    <Compile Include="Engine\Physics\CommonPhysics.cs" />
+    <Compile Include="Engine\Physics\Particle.cs" />
+    <Compile Include="Engine\Physics\Vector3.cs" />
+    <Compile Include="Engine\Renderer.cs" />
     <Compile Include="Engine\Shader.cs" />
     <Compile Include="Engine\Texture.cs" />
     <Compile Include="Exceptions\MaterialException.cs" />
@@ -65,6 +74,7 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
+    <None Include="Data\Models\Box\simpleBox.obj" />
     <None Include="Data\Models\Sphere\lowPolygonSphere.obj" />
     <None Include="Data\Models\Sphere\lowpolysphere.obj" />
     <None Include="Data\Models\Sphere\simpleCube.obj" />
